@@ -3,11 +3,19 @@ import ssl
 skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = input("What is the host? ")
-dirs = input("Dirs you wanna search separated by / : ")
+dirs = input("Dirs you wanna search separated by ; : ")
 
-dirs = dirs.split("/")
+dirs = dirs.split(";")
 
-hIP = socket.gethostbyname(host)
+try:
+    hIP = socket.gethostbyname(host)
+except:
+    try:
+        if 'www' not in host:
+            host = f'www.{host}'
+            hIP = socket.gethostbyname(host)
+    except:
+        print("Erro ao conectar ao host.")
 
 try:
     skt.connect((hIP, 443))
@@ -18,22 +26,17 @@ except:
     except:
         print("Erro ao conectar")
 
-print(f'Connected to {host}...')
-
-print(skt)
-print(" ")
+print(f'\nConnected to {host} at {hIP}')
 
 for i in dirs:
     cmd = f'HEAD /{i}/ HTTP/1.1\r\nHost: {host}\r\n\r\n'.encode()
 
-    print(cmd)
-    print(" ")
-
+    print(f"\nSending request: {cmd}\n")
     skt.send(cmd)
 
-
     data = skt.recv(1024)
-
-    print(data.decode(),end='')
+    while len(data) > 1:
+        print(data.decode(),end='')
+        data = skt.recv(1024)
     print("\n ------------------------------------------------- \n")
 skt.close()
