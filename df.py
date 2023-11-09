@@ -34,9 +34,19 @@ for i in dirs:
     print(f"\nSending request: {cmd}\n")
     skt.send(cmd)
 
-    data = skt.recv(1024)
-    while len(data) > 1:
-        print(data.decode(),end='')
-        data = skt.recv(1024)
+    data = b''
+    while b'\r\n\r\n' not in data:
+        data += skt.recv(1024)
+
+    data = data.decode()
+    print(data)
+    status = data[:25]
+
+    if '301' in status:
+        for x in data.split("\n"):
+		if "Location:" in x:
+			print(f"Just found: {x}")
+
     print("\n ------------------------------------------------- \n")
+
 skt.close()
