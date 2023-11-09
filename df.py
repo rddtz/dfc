@@ -13,8 +13,8 @@ def request(skt, i, host):
         data += skt.recv(1024)
 
     data = data.decode()
-    status = data[:25]
-
+    status = data.split('\n')[0]
+    
     if '301' in status:
         redirect = data.split('\n')
 
@@ -26,17 +26,24 @@ def request(skt, i, host):
         for l in range(2):
             finder = redirect.find(':')
             redirect = redirect[finder + 1:]
+ 
+        redirect = redirect[2:]
 
-        redirect = redirect[2:len(redirect) - 2]
+        while '/' in redirect:
+            redirect = redirect[:redirect.find('/')]
+            
         print(redirect)
 
         tempskt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         tempskt.connect((socket.gethostbyname(redirect), 443))
-        tempskt = ssl.wrap_socket(tempskt, keyfile=None, certfile=None, server_side=False, cert_reqs=ssl.CERT_NONE, ssl_version=ssl.PROTOCOL_SSLv23)
+        context = ssl.create_default_context()
+        tempskt = context.wrap_socket(tempskt, server_hostname=host)
 
         request(tempskt, i, redirect)
         tempskt.close()
     else:
+        print(f"Requested: {i} | Response: {status}\n\nFull Data:\n")
         print(data)
 
 
@@ -63,9 +70,11 @@ except:
 
 try:
     skt.connect((hIP, 443))
-    skt = ssl.wrap_socket(skt, keyfile=None, certfile=None, server_side=False, cert_reqs=ssl.CERT_NONE, ssl_version=ssl.PROTOCOL_SSLv23)
+    context = ssl.create_default_context()
+    skt = context.wrap_socket(skt, server_hostname=host)
 except:
     try:
+        skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         skt.connect((hIP, 80))
     except:
         print("Erro ao conectar")
